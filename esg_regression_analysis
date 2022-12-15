@@ -1,0 +1,189 @@
+# importing packages needed
+import pandas as pd
+import numpy as np
+
+# reading dataset from csv files into python environment (data collected from Bloomberg Terminal)
+data1 = pd.read_csv('data1.csv', index_col = 0)
+data2 = pd.read_csv('data2.csv', index_col = 0)
+
+# combining both data frames
+data = pd.concat([data1, data2])
+
+# keeping year component as date 
+data['date'] = pd.DatetimeIndex(data['date']).year
+
+# rearranging layout of data
+data3 = data.pivot(index = ['date', 'ticker'], columns = ['field'], values = 'value')
+
+# showing all data to check for any Nan or errors
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+
+# dropping field with insufficient data
+data3 = data3.drop('RETURN_ON_CAP', axis = 1)
+
+# dropping tickers with insufficient data
+print(len(data3.index))
+data3.drop(['EA US Equity', 'MSFT US Equity', 'NKE US Equity', 'NVDA US Equity', 'WMT US Equity', 
+            'HPQ US Equity', 'MCD US Equity'], axis= 0, level= 1, inplace = True)
+
+# checking for any null information in data3
+data3.isnull().sum()
+
+# dividing the data into two parts, 'train_data' and 'test_data'
+train_data = data3.loc[:'2020']
+test_data = data3.loc['2021':]
+
+# assigning target value 'RETURN_ON_ASSET' to 'train_y' and 'test_y'
+train_y = train_data['RETURN_ON_ASSET']
+test_y = test_data['RETURN_ON_ASSET']
+
+# dropping 'RETURN_ON_ASSET' and using all remaining variables as predictors set
+train_x = train_data.drop('RETURN_ON_ASSET', axis = 1)
+test_x = test_data.drop('RETURN_ON_ASSET', axis = 1)
+
+# standardizing the data in 0 mean and 1 standard deviation
+train_stnd = (train_x - train_x.mean())/train_x.std()
+test_stnd = (test_x - test_x.mean())/test_x.std()
+
+# importing packages needed to get Linear Regression, MSE and R-square for training and test data
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+
+lr = LinearRegression().fit(train_stnd, train_y)
+
+TrainPredict = lr.predict(train_stnd)
+TestPredict = lr.predict(test_stnd)
+
+# printing MSE values
+print('Training MSE is', mean_squared_error(train_y.tolist(), TrainPredict.tolist()))
+print('Testing MSE is', mean_squared_error(test_y.tolist(), TestPredict.tolist()))
+
+# printing R-square values
+print('Training R-squared is', r2_score(train_y.tolist(), TrainPredict.tolist()))
+print('Testing R-squared is', r2_score(test_y.tolist(), TestPredict.tolist()))
+
+# importing packages to construct graphs of regression model
+import matplotlib.pyplot as plt
+import seaborn as sea
+get_ipython().run_line_magic('matplotlib', 'inline')
+
+# constructing graph to compare ESG Disclosure Score to Firm Performance
+plt.figure(figsize = (8, 6))
+
+# selecting x and y variables
+x = data3['ESG_DISCLOSURE_SCORE']
+
+y = data3['RETURN_ON_ASSET']
+y2 = data3['PROF_MARGIN']
+y3 = data3['RETURN_COM_EQY']
+y4 = data3['RETURN_ON_INV_CAPITAL']
+y5 = data3['TOBIN_Q_RATIO']
+
+# creating scatterplots
+sea.regplot(x=x, y=y, line_kws={'linestyle': '--'}, label = 'Return on Asset')
+sea.regplot(x=x, y=y2, line_kws={'linestyle': 'solid'}, label = 'Profit Margin')
+sea.regplot(x=x, y=y3, line_kws={'linestyle': 'dashdot'}, label = 'Return on Equity')
+sea.regplot(x=x, y=y4, line_kws={'linestyle': 'dotted'}, label = 'Return on Investment')
+sea.regplot(x=x, y=y5, line_kws={'linestyle': '--'}, label = 'TobinQ Ratio')
+
+# adding proper graph labels
+plt.title('Firm Performance vs. ESG', fontsize=18)
+plt.xlabel('ESG Rating')
+plt.ylabel('Firm Performance')
+plt.legend(title = 'Variables', loc = 2, bbox_to_anchor = (1,1))
+
+# adjusting dimensions to see clearly
+plt.xlim(40, 82)
+plt.ylim(-2, 60)
+plt.show()
+
+# constructing graph to compare ESG Social Score to Firm Performance
+plt.figure(figsize = (8, 6))
+
+# selecting x and y variables
+x = data3['SOCIAL_DISCLOSURE_SCORE']
+
+y = data3['RETURN_ON_ASSET']
+y2 = data3['PROF_MARGIN']
+y3 = data3['RETURN_COM_EQY']
+y4 = data3['RETURN_ON_INV_CAPITAL']
+y5 = data3['TOBIN_Q_RATIO']
+
+# creating scatterplots
+sea.regplot(x=x, y=y, line_kws={'linestyle': '--'}, label = 'Return on Asset')
+sea.regplot(x=x, y=y2, line_kws={'linestyle': 'solid'}, label = 'Profit Margin')
+sea.regplot(x=x, y=y3, line_kws={'linestyle': 'dashdot'}, label = 'Return on Equity')
+sea.regplot(x=x, y=y4, line_kws={'linestyle': 'dotted'}, label = 'Return on Investment')
+sea.regplot(x=x, y=y5, line_kws={'linestyle': '--'}, label = 'TobinQ Ratio')
+
+# adding proper graph labels
+plt.title('Firm Performance vs. ESG Social Scores', fontsize=18)
+plt.xlabel('Social Rating')
+plt.ylabel('Firm Performance')
+plt.legend(title = 'Variables', loc = 2, bbox_to_anchor = (1,1))
+
+# adjusting dimensions to see clearly
+plt.xlim(15, 60)
+plt.ylim(-1, 60)
+plt.show()
+
+# constructing graph to compare ESG Environmental Score to Firm Performance
+plt.figure(figsize = (8, 6))
+
+# selecting x and y variables
+x = data3['ENVIRON_DISCLOSURE_SCORE']
+
+y = data3['RETURN_ON_ASSET']
+y2 = data3['PROF_MARGIN']
+y3 = data3['RETURN_COM_EQY']
+y4 = data3['RETURN_ON_INV_CAPITAL']
+y5 = data3['TOBIN_Q_RATIO']
+
+# creating scatterplots
+sea.regplot(x=x, y=y, line_kws={'linestyle': '--'}, label = 'Return on Asset')
+sea.regplot(x=x, y=y2, line_kws={'linestyle': 'solid'}, label = 'Profit Margin')
+sea.regplot(x=x, y=y3, line_kws={'linestyle': 'dashdot'}, label = 'Return on Equity')
+sea.regplot(x=x, y=y4, line_kws={'linestyle': 'dotted'}, label = 'Return on Investment')
+sea.regplot(x=x, y=y5, line_kws={'linestyle': '--'}, label = 'TobinQ Ratio')
+
+# adding proper graph labels
+plt.title('Firm Performance vs. ESG Environmental Scores', fontsize=18)
+plt.xlabel('Environmental Rating')
+plt.ylabel('Firm Performance')
+plt.legend(title = 'Variables', loc = 2, bbox_to_anchor = (1,1))
+
+# adjusting dimensions to see clearly
+plt.xlim(20, 85)
+plt.ylim(-1, 60)
+plt.show()
+
+# constructing graph to compare ESG Governance Score to Firm Performance
+plt.figure(figsize = (8, 6))
+
+# selecting x and y variables
+x = data3['GOVNCE_DISCLOSURE_SCORE']
+
+y = data3['RETURN_ON_ASSET']
+y2 = data3['PROF_MARGIN']
+y3 = data3['RETURN_COM_EQY']
+y4 = data3['RETURN_ON_INV_CAPITAL']
+y5 = data3['TOBIN_Q_RATIO']
+
+# creating scatterplots
+sea.regplot(x=x, y=y, line_kws={'linestyle': '--'}, label = 'Return on Asset')
+sea.regplot(x=x, y=y2, line_kws={'linestyle': 'solid'}, label = 'Profit Margin')
+sea.regplot(x=x, y=y3, line_kws={'linestyle': 'dashdot'}, label = 'Return on Equity')
+sea.regplot(x=x, y=y4, line_kws={'linestyle': 'dotted'}, label = 'Return on Investment')
+sea.regplot(x=x, y=y5, line_kws={'linestyle': '--'}, label = 'TobinQ Ratio')
+
+# adding proper graph labels
+plt.title('Firm Performance vs. ESG Governance Scores', fontsize=18)
+plt.xlabel('Governance Rating')
+plt.ylabel('Firm Performance')
+plt.legend(title = 'Variables', loc = 2, bbox_to_anchor = (1,1))
+
+# adjusting dimensions to see clearly
+plt.xlim(84, 101)
+plt.ylim(-1, 60)
+plt.show()
